@@ -52,3 +52,9 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+.vs\*
+mouseHook/.vs/
+*.tlog
+*.filters
+mouseHook/x64/

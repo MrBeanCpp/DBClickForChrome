@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Images/ICON_WB.ico</file>
+    </qresource>
+</RCC>
