@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QMenu>
 #include <QAction>
+#include <QScreen>
 /*
  * Hooks and DLLs: http://www.flounder.com/hooks.htm
  * HOOK API （一）——HOOK基础+一个鼠标钩子实例: https://www.cnblogs.com/fanling999/p/4592740.html
@@ -17,6 +18,9 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget)
 {
     ui->setupUi(this);
+
+    scaleRatio = qApp->primaryScreen()->logicalDotsPerInch() / 96; //high DPI scale
+    TAB_H *= scaleRatio;
 
     initSysTray();
 
@@ -88,7 +92,7 @@ bool Widget::nativeEvent(const QByteArray& eventType, void* message, long* resul
     Q_UNUSED(result);
     MSG* msg = (MSG*)message;
     static const UINT UWM_MOUSEHOOK = RegisterWindowMessageW(L"Chrome_WH_MOUSE");
-    if (msg->message == UWM_MOUSEHOOK && msg->wParam == WM_LBUTTONDBLCLK) {
+    if (msg->message == UWM_MOUSEHOOK && msg->wParam == WM_LBUTTONDBLCLK && QCursor::pos().y() <= TAB_H) { //检测标签页高度 防止误触
         HWND hwnd = (HWND)msg->lParam;
         qDebug() << "WM_LBUTTONDBLCLK" << hwnd;
         if (Win::getWindowClass(hwnd) == ChromeClass) {

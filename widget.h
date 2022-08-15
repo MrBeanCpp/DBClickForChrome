@@ -23,6 +23,8 @@ private:
     HWND hWndChrome = NULL;
     const QString ChromeClass = "Chrome_WidgetWin_1";
     QSystemTrayIcon* sysTray = nullptr;
+    qreal scaleRatio = 1.0;
+    int TAB_H = 34; //px
 
     // QWidget interface
 protected:
