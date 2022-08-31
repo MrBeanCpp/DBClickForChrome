@@ -20,7 +20,7 @@ public:
 private:
     Ui::Widget* ui;
 
-    HWND hWndChrome = NULL;
+    HWND hWndTarget = NULL;
     const QString ChromeClass = "Chrome_WidgetWin_1";
     QSystemTrayIcon* sysTray = nullptr;
     qreal scaleRatio = 1.0;
