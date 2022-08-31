@@ -44,7 +44,7 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
 extern "C" _declspec(dllexport)
 bool setMouseHook(HWND hWnd, HWND target, DWORD* errorCode)
 {
-    if (hWndServer) {
+    if (hWndServer && hWndServer != hWnd) {
         *errorCode = 985211;
         return false;
     }

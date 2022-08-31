@@ -41,21 +41,22 @@ Widget::Widget(QWidget* parent)
 
     QTimer* timer = new QTimer(this);
     timer->callOnTimeout(this, [=]() {
-        static QSet<HWND> hookedWins;
+        static QSet<DWORD> hookedThreads; //不能用HWND 否则会多次注入 导致多次触发（一个Thread可以有多个windows）
         HWND foreWin = GetForegroundWindow();
         QString className = Win::getWindowClass(foreWin);
         QString title = Win::getWindowText(foreWin);
+        DWORD threadID = GetWindowThreadProcessId(foreWin, NULL);
         title.replace("\u200B", "");
 
         qDebug() << foreWin << className << title;
-        if (hookedWins.contains(foreWin)) return;
+        if (hookedThreads.contains(threadID)) return;
         if (className != ChromeClass) return;
         if (!(title.contains("Google Chrome") || title.contains("Microsoft Edge"))) return;
 
         DWORD errorCode = 114514;
         if (setMouseHook((HWND)this->winId(), foreWin, &errorCode)) {
             qDebug() << "Hook Successful!" << errorCode << foreWin << title << className;
-            hookedWins << foreWin;
+            hookedThreads << threadID;
             sysTray->showMessage("Tip", "Hacked Chrome | Edge");
         } else {
             qDebug() << "Hook Failed; Code:" << errorCode;
