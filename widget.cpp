@@ -8,6 +8,7 @@
 #include <QMenu>
 #include <QAction>
 #include <QScreen>
+#include <QSettings>
 /*
  * Hooks and DLLs: http://www.flounder.com/hooks.htm
  * HOOK API （一）——HOOK基础+一个鼠标钩子实例: https://www.cnblogs.com/fanling999/p/4592740.html
@@ -21,6 +22,7 @@ Widget::Widget(QWidget* parent)
     scaleRatio = qApp->primaryScreen()->logicalDotsPerInch() / 96; //high DPI scale
     TAB_H *= scaleRatio;
 
+    readIni();
     initSysTray();
 
     typedef bool (*HookFunc)(HWND, HWND, DWORD*);
@@ -51,16 +53,18 @@ Widget::Widget(QWidget* parent)
         qDebug() << foreWin << className << title;
         if (hookedThreads.contains(threadID)) return;
         if (className != ChromeClass) return;
-        if (!(title.contains("Google Chrome") || title.contains("Microsoft Edge"))) return;
+        //if (!(title.contains("Google Chrome") || title.contains("Microsoft Edge"))) return;
 
-        DWORD errorCode = 114514;
-        if (setMouseHook((HWND)this->winId(), foreWin, &errorCode)) {
-            qDebug() << "Hook Successful!" << errorCode << foreWin << title << className;
-            hookedThreads << threadID;
-            sysTray->showMessage("Tip", "Hacked Chrome | Edge");
-        } else {
-            qDebug() << "Hook Failed; Code:" << errorCode;
-            //QMessageBox::warning(this, "Warning", QString("Hook Failed; Code: %1 ; %2").arg(errorCode).arg(GetLastError()));
+        if ((chrome && title.contains("Google Chrome")) || (edge && title.contains("Microsoft Edge"))) {
+            DWORD errorCode = 114514;
+            if (setMouseHook((HWND)this->winId(), foreWin, &errorCode)) {
+                qDebug() << "Hook Successful!" << errorCode << foreWin << title << className;
+                hookedThreads << threadID;
+                sysTray->showMessage("Tip", "Hacked Chrome | Edge");
+            } else {
+                qDebug() << "Hook Failed; Code:" << errorCode;
+                //QMessageBox::warning(this, "Warning", QString("Hook Failed; Code: %1 ; %2").arg(errorCode).arg(GetLastError()));
+            }
         }
     });
     timer->start(1000);
@@ -99,12 +103,45 @@ void Widget::initSysTray()
     QMenu* menu = new QMenu(this);
     menu->setStyleSheet("QMenu{background-color:rgb(45,45,45);color:rgb(220,220,220);}"
                         "QMenu:selected{background-color:rgb(60,60,60);}");
+    QAction* act_edge = new QAction("Edge", menu);
+    QAction* act_chrome = new QAction("Chrome", menu);
     QAction* act_quit = new QAction("Quit>>", menu);
+
+    act_edge->setCheckable(true);
+    act_edge->setChecked(edge);
+    act_chrome->setCheckable(true);
+    act_chrome->setChecked(chrome);
     connect(act_quit, &QAction::triggered, qApp, &QApplication::quit);
+    connect(act_edge, &QAction::toggled, this, [=](bool checked) {
+        writeIni("edge", checked);
+        sysTray->showMessage("Tip", "已取消Edge Hook 请重启生效\n2秒后自动退出...");
+        QTimer::singleShot(2000, [=]() { qApp->quit(); });
+    });
+    connect(act_chrome, &QAction::toggled, this, [=](bool checked) {
+        writeIni("chrome", checked);
+        sysTray->showMessage("Tip", "已取消Chrome Hook 请重启生效\n2秒后自动退出...");
+        QTimer::singleShot(2000, [=]() { qApp->quit(); });
+    });
+
+    menu->addAction(act_edge);
+    menu->addAction(act_chrome);
     menu->addAction(act_quit);
 
     sysTray->setContextMenu(menu);
     sysTray->show();
+}
+
+void Widget::writeIni(const QString& key, const QVariant& value)
+{
+    QSettings iniSet(iniPath, QSettings::IniFormat);
+    iniSet.setValue(key, value);
+}
+
+void Widget::readIni()
+{
+    QSettings iniSet(iniPath, QSettings::IniFormat);
+    edge = iniSet.value("edge", true).toBool();
+    chrome = iniSet.value("chrome", true).toBool();
 }
 
 bool Widget::nativeEvent(const QByteArray& eventType, void* message, long* result) //还需要区分Chrome标题窗口
