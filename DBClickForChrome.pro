@@ -27,7 +27,7 @@ HEADERS += \
 FORMS += \
     widget.ui
 
-LIBS+=-lpsapi
+LIBS += -lpsapi -luser32
 
 RC_ICONS = Images/ICON_WB.ico
 
@@ -38,3 +38,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     res.qrc
+
+msvc {
+    QMAKE_CFLAGS += /utf-8
+    QMAKE_CXXFLAGS += /utf-8
+}
